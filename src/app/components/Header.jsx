@@ -66,7 +66,7 @@ const Header = () => {
             padding: "0 6px",
           }}
         >
-          <select
+          {/* <select
             aria-label="language"
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
@@ -93,7 +93,7 @@ const Header = () => {
               height: "16px",
               background: "rgba(255,255,255,0.2)",
             }}
-          />
+          /> */}
           <GlobalVolumeControl variant="inline" />
         </div>
       </div>

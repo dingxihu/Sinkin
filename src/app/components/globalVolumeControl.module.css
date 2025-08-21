@@ -44,11 +44,12 @@
   display: flex;
   align-items: center;
   height: 100%;
-  padding-left: 10px;
+  padding-left: 0;
 }
 
 .sliderContainer.show {
   width: 100px;
+  padding-left: 10px;
 }
 
 .volumeSlider {
@@ -87,7 +88,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 0;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
@@ -108,12 +109,14 @@
 }
 
 .volumeControlInline .sliderContainer {
-  width: 100px;
-  padding-left: 4px;
+  width: 0;
+  padding-left: 0;
 }
 
 .volumeControlInline .sliderContainer.show {
   width: 120px;
+  padding-left: 4px;
+  margin-right: 8px;
 }
 
 .volumeControlInline .volumeSlider {
