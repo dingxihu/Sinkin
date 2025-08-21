@@ -30,7 +30,19 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
     }
   }, [globalVolume, isGlobalMuted, volume]);
 
+  // 保存最新状态，供 getState 使用，避免因依赖变更导致重新注册
+  const isPlayingRef = useRef(false);
+  const volumeRef = useRef(1);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
+
   const loadAndPlayAudio = async () => {
+    // 防止重复触发创建/播放
+    if (isLoading) return;
+    if (audioRef.current && !audioRef.current.paused) {
+      setIsPlaying(true);
+      return;
+    }
     if (!audioRef.current) {
       setIsLoading(true);
       try {
@@ -148,7 +160,7 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
           audioRef.current.volume = isGlobalMuted ? 0 : newV * globalVolume;
         }
       },
-      getState: () => ({ isPlaying, volume }),
+      getState: () => ({ isPlaying: isPlayingRef.current, volume: volumeRef.current }),
     };
     const dispose = registerPlayer(id, controller);
     return () => {
@@ -161,9 +173,8 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
         audioRef.current = null;
       }
     };
-    // 仅在首尾及依赖变化时注册/更新
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, group, globalVolume, isGlobalMuted, isAlarmPlaying, registerPlayer, unregisterPlayer, isPlaying]);
+    // 仅在标识或注册函数变化时注册/更新，避免因状态变更反复卸载/重建
+  }, [title, group, registerPlayer, unregisterPlayer]);
 
   return (
     <div className={styles.audioItem}>
