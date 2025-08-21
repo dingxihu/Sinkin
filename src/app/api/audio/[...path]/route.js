@@ -75,28 +75,27 @@ export async function GET(req, context) {
   const target = buildTargetUrl(awaited.path || []);
   const range = req.headers.get("range") || req.headers.get("Range");
 
+  console.log("代理音频请求:", target, "Range:", range);
+
   const upstream = await fetch(target, {
     headers: range ? { Range: range } : undefined,
     cache: "no-store",
   });
 
-  const headers = new Headers();
-  const passthrough = [
-    "content-type",
-    "content-length",
-    "accept-ranges",
-    "content-range",
-    "last-modified",
-    "etag",
-    "cache-control",
-  ];
-  for (const key of passthrough) {
-    const val = upstream.headers.get(key);
-    if (val) headers.set(key, val);
-  }
+  console.log("上游响应状态:", upstream.status, "Content-Type:", upstream.headers.get("content-type"));
 
+  const headers = new Headers();
+  
+  // 传递所有上游响应头
+  upstream.headers.forEach((value, key) => {
+    headers.set(key, value);
+  });
+
+  // 添加CORS头
   const cors = buildCorsHeaders();
   Object.entries(cors).forEach(([k, v]) => headers.set(k, v));
+
+  console.log("最终响应头:", Object.fromEntries(headers.entries()));
 
   return new Response(upstream.body, {
     status: upstream.status,

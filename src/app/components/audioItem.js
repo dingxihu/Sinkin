@@ -42,6 +42,14 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
         audio.loop = true;
         audio.volume = isGlobalMuted ? 0 : volume * globalVolume;
         
+        console.log("创建音频元素:", title, "src:", src, "volume:", audio.volume);
+        
+        // 监听音频事件
+        audio.addEventListener('loadstart', () => console.log("音频开始加载:", title));
+        audio.addEventListener('canplay', () => console.log("音频可以播放:", title));
+        audio.addEventListener('canplaythrough', () => console.log("音频可以完整播放:", title));
+        audio.addEventListener('error', (e) => console.error("音频加载错误:", title, e));
+        
         // 更简单的加载方式 - 让浏览器处理加载
         audioRef.current = audio;
         setIsLoading(false);
