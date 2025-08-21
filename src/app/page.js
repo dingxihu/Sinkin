@@ -1,12 +1,14 @@
 import styles from "./page.module.css";
 import AudioItem from "./components/audioItem";
 import { getAudioFiles } from "./utils/getAudioFiles";
+import AudioPreloader from "./components/AudioPreloader";
 
 export default function Home() {
   const { audioData, musicData } = getAudioFiles();
 
   return (
     <div className={styles.page}>
+      <AudioPreloader />
       <main className={styles.main}>
         <section className={styles.section}>
           <div className={styles.sectionHeader}>

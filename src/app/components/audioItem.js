@@ -4,13 +4,21 @@ import { useRef, useState, useEffect, memo } from "react";
 import Image from "next/image";
 import styles from "./audioItem.module.css";
 import { useAudio } from "../context/AudioContext";
+import audioPreloader from "../utils/audioPreloader";
 
 const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audio" }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPreloaded, setIsPreloaded] = useState(false);
   const { globalVolume, isGlobalMuted, isAlarmPlaying, registerPlayer, unregisterPlayer } = useAudio();
+  
+  // 保存最新状态，供 getState 使用，避免因依赖变更导致重新注册
+  const isPlayingRef = useRef(false);
+  const volumeRef = useRef(1);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
 
   /**
    * @description 监听闹钟状态变化，当闹钟开始播放时停止当前音频
@@ -30,11 +38,25 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
     }
   }, [globalVolume, isGlobalMuted, volume]);
 
-  // 保存最新状态，供 getState 使用，避免因依赖变更导致重新注册
-  const isPlayingRef = useRef(false);
-  const volumeRef = useRef(1);
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
-  useEffect(() => { volumeRef.current = volume; }, [volume]);
+  // 组件挂载时预加载音频
+  useEffect(() => {
+    if (audioPreloader.isPreloaded(src)) {
+      setIsPreloaded(true);
+      return;
+    }
+    
+    // 移动端延迟预加载，桌面端立即预加载
+    const delay = audioPreloader.isMobile ? 1000 : 0;
+    const timer = setTimeout(() => {
+      audioPreloader.preloadAudio(src, title, 'normal').then(() => {
+        setIsPreloaded(true);
+      }).catch(() => {
+        // 预加载失败不影响正常使用
+      });
+    }, delay);
+    
+    return () => clearTimeout(timer);
+  }, [src, title]);
 
   const loadAndPlayAudio = async () => {
     // 防止重复触发创建/播放
@@ -43,65 +65,65 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
       setIsPlaying(true);
       return;
     }
-    if (!audioRef.current) {
-      setIsLoading(true);
-      try {
+    
+    setIsLoading(true);
+    
+    try {
+      let audio;
+      
+      // 优先使用预加载的音频
+      if (audioPreloader.isPreloaded(src)) {
+        audio = audioPreloader.getCachedAudio(src);
+        console.log("使用预加载的音频:", title);
+      } else {
         // 创建新的audio元素
-        const audio = new Audio();
-        audio.crossOrigin = "anonymous"; // 处理CORS问题
-        audio.preload = "none"; // 不预加载
+        audio = new Audio();
+        audio.crossOrigin = "anonymous";
+        audio.preload = "auto"; // 移动端使用自动预加载
         audio.src = src;
-        audio.loop = true;
-        audio.volume = isGlobalMuted ? 0 : volume * globalVolume;
-        
-        console.log("创建音频元素:", title, "src:", src, "volume:", audio.volume);
-        
-        // 监听音频事件
-        audio.addEventListener('loadstart', () => console.log("音频开始加载:", title));
-        audio.addEventListener('canplay', () => console.log("音频可以播放:", title));
-        audio.addEventListener('canplaythrough', () => console.log("音频可以完整播放:", title));
-        audio.addEventListener('error', (e) => console.error("音频加载错误:", title, e));
-        
-        // 更简单的加载方式 - 让浏览器处理加载
-        audioRef.current = audio;
-        setIsLoading(false);
-        
-        // 直接尝试播放，让浏览器处理加载
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setIsPlaying(true);
-              console.log("音频播放成功:", title);
-            })
-            .catch((error) => {
-              console.error("音频播放失败:", error, "URL:", src);
-              setIsPlaying(false);
-              
-              // 如果播放失败，尝试重新加载
-              if (error.name === 'NotSupportedError' || error.name === 'NotAllowedError') {
-                console.warn("尝试备用加载方式:", title);
-                audio.load(); // 重新加载
-              }
-            });
-        }
-      } catch (error) {
-        console.error("音频创建失败:", error, "URL:", src);
-        setIsLoading(false);
+        console.log("创建新的音频元素:", title);
       }
-    } else {
-      // 直接播放已缓存的音频
-      const playPromise = audioRef.current.play();
+      
+      audio.loop = true;
+      audio.volume = isGlobalMuted ? 0 : volume * globalVolume;
+      
+      // 监听音频事件
+      audio.addEventListener('loadstart', () => console.log("音频开始加载:", title));
+      audio.addEventListener('canplay', () => console.log("音频可以播放:", title));
+      audio.addEventListener('canplaythrough', () => console.log("音频可以完整播放:", title));
+      audio.addEventListener('error', (e) => console.error("音频加载错误:", title, e));
+      
+      audioRef.current = audio;
+      setIsLoading(false);
+      
+      // 移动端优化：等待 canplay 事件后再播放
+      if (audioPreloader.isMobile && audio.readyState < 2) {
+        await new Promise((resolve) => {
+          audio.addEventListener('canplay', resolve, { once: true });
+        });
+      }
+      
+      // 直接尝试播放
+      const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
             setIsPlaying(true);
+            console.log("音频播放成功:", title);
           })
           .catch((error) => {
-            console.error("音频播放失败:", error);
+            console.error("音频播放失败:", error, "URL:", src);
             setIsPlaying(false);
+            
+            // 移动端特殊处理
+            if (audioPreloader.isMobile && error.name === 'NotAllowedError') {
+              console.warn("移动端需要用户交互才能播放音频");
+            }
           });
       }
+    } catch (error) {
+      console.error("音频创建失败:", error, "URL:", src);
+      setIsLoading(false);
     }
   };
 
@@ -179,10 +201,11 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
   return (
     <div className={styles.audioItem}>
       <button
-        className={`${styles.iconButton} ${isPlaying ? styles.playing : ""}`}
+        className={`${styles.iconButton} ${isPlaying ? styles.playing : ""} ${isPreloaded ? styles.preloaded : ""}`}
         onClick={togglePlay}
         disabled={isLoading}
         style={{ opacity: isAlarmPlaying ? 0.5 : 1 }} // 添加视觉反馈
+        title={isPreloaded ? "已预加载" : "点击播放"}
       >
         {isLoading ? (
           <div className={styles.loadingSpinner} />
@@ -195,6 +218,9 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
             style={{ objectFit: "cover" }}
             priority
           />
+        )}
+        {isPreloaded && !isLoading && (
+          <div className={styles.preloadIndicator} title="已预加载">⚡</div>
         )}
       </button>
       <div className={styles.volumeControl}>

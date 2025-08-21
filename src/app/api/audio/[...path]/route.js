@@ -1,7 +1,17 @@
 import fs from "fs";
 import path from "path";
 
+// 简单的内存缓存，避免重复读取配置文件
+let configCache = null;
+let configCacheTime = 0;
+const CONFIG_CACHE_TTL = 30000; // 30秒缓存
+
 function getAudioBaseUrl() {
+  const now = Date.now();
+  if (configCache && (now - configCacheTime) < CONFIG_CACHE_TTL) {
+    return configCache;
+  }
+
   const configPath = path.join(process.cwd(), "public", "config.json");
   let baseUrl = "http://smartmedicalstatic.oss-cn-beijing.aliyuncs.com/_/assets/audio/";
   try {
@@ -15,6 +25,9 @@ function getAudioBaseUrl() {
   } catch {
     // ignore and use default baseUrl
   }
+  
+  configCache = baseUrl;
+  configCacheTime = now;
   return baseUrl;
 }
 
@@ -30,9 +43,14 @@ function buildCorsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-    "Access-Control-Allow-Headers": "Range, Content-Type, Accept",
-    "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length, Content-Type",
+    "Access-Control-Allow-Headers": "Range, Content-Type, Accept, Accept-Encoding",
+    "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length, Content-Type, Cache-Control",
   };
+}
+
+// 检测移动端用户代理
+function isMobileUserAgent(userAgent) {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent || '');
 }
 
 export async function OPTIONS() {
@@ -43,9 +61,16 @@ export async function HEAD(req, context) {
   const awaited = await context.params;
   const target = buildTargetUrl(awaited.path || []);
   const range = req.headers.get("range") || req.headers.get("Range");
+  const userAgent = req.headers.get("user-agent");
+  const isMobile = isMobileUserAgent(userAgent);
+
   const upstream = await fetch(target, {
     method: "HEAD",
-    headers: range ? { Range: range } : undefined,
+    headers: {
+      ...(range ? { Range: range } : {}),
+      // 移动端优化：请求压缩内容
+      ...(isMobile ? { "Accept-Encoding": "gzip, deflate, br" } : {}),
+    },
     cache: "no-store",
   });
 
@@ -58,10 +83,18 @@ export async function HEAD(req, context) {
     "last-modified",
     "etag",
     "cache-control",
+    "content-encoding",
   ];
   for (const key of passthrough) {
     const val = upstream.headers.get(key);
     if (val) headers.set(key, val);
+  }
+
+  // 移动端优化：设置更长的缓存时间
+  if (isMobile) {
+    headers.set("Cache-Control", "public, max-age=3600, s-maxage=3600"); // 1小时缓存
+  } else {
+    headers.set("Cache-Control", "public, max-age=1800, s-maxage=1800"); // 30分钟缓存
   }
 
   const cors = buildCorsHeaders();
@@ -74,11 +107,17 @@ export async function GET(req, context) {
   const awaited = await context.params;
   const target = buildTargetUrl(awaited.path || []);
   const range = req.headers.get("range") || req.headers.get("Range");
+  const userAgent = req.headers.get("user-agent");
+  const isMobile = isMobileUserAgent(userAgent);
 
-  console.log("代理音频请求:", target, "Range:", range);
+  console.log("代理音频请求:", target, "Range:", range, "Mobile:", isMobile);
 
   const upstream = await fetch(target, {
-    headers: range ? { Range: range } : undefined,
+    headers: {
+      ...(range ? { Range: range } : {}),
+      // 移动端优化：请求压缩内容
+      ...(isMobile ? { "Accept-Encoding": "gzip, deflate, br" } : {}),
+    },
     cache: "no-store",
   });
 
@@ -90,6 +129,13 @@ export async function GET(req, context) {
   upstream.headers.forEach((value, key) => {
     headers.set(key, value);
   });
+
+  // 移动端优化：设置更长的缓存时间
+  if (isMobile) {
+    headers.set("Cache-Control", "public, max-age=3600, s-maxage=3600"); // 1小时缓存
+  } else {
+    headers.set("Cache-Control", "public, max-age=1800, s-maxage=1800"); // 30分钟缓存
+  }
 
   // 添加CORS头
   const cors = buildCorsHeaders();
