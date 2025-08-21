@@ -35,6 +35,9 @@
   flex-shrink: 0;
   padding: 11px;
   position: relative;
+  /* 移动端触摸优化 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .sliderContainer {
@@ -66,6 +69,8 @@
     var(--slider-bg) var(--volume-percentage, 50%)
   );
   flex-shrink: 0;
+  /* 移动端触摸优化 */
+  touch-action: pan-x;
 }
 
 .volumeSlider::-webkit-slider-thumb {
@@ -80,6 +85,21 @@
 }
 
 .volumeSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.volumeSlider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--slider-active);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s ease;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.volumeSlider::-moz-range-thumb:hover {
   transform: scale(1.2);
 }
 
@@ -121,4 +141,115 @@
 
 .volumeControlInline .volumeSlider {
   width: 120px;
+}
+
+/* 平板端优化 */
+@media (max-width: 768px) {
+  .volumeControl {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 42px;
+    height: 42px;
+  }
+  
+  .volumeControl:hover {
+    width: 150px;
+  }
+  
+  .muteButton {
+    width: 42px;
+    height: 42px;
+    padding: 10px;
+  }
+  
+  .sliderContainer.show {
+    width: 90px;
+    padding-left: 8px;
+  }
+  
+  .volumeSlider {
+    width: 90px;
+  }
+  
+  .volumeControlInline {
+    height: 24px;
+    padding: 0 5px;
+  }
+  
+  .volumeControlInline .muteButton {
+    width: 22px;
+    height: 22px;
+    padding: 4px;
+  }
+  
+  .volumeControlInline .sliderContainer.show {
+    width: 100px;
+    padding-left: 3px;
+    margin-right: 6px;
+  }
+  
+  .volumeControlInline .volumeSlider {
+    width: 100px;
+  }
+}
+
+/* 手机端优化 */
+@media (max-width: 480px) {
+  .volumeControl {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 38px;
+    height: 38px;
+  }
+  
+  .volumeControl:hover {
+    width: 130px;
+  }
+  
+  .muteButton {
+    width: 38px;
+    height: 38px;
+    padding: 9px;
+  }
+  
+  .sliderContainer.show {
+    width: 80px;
+    padding-left: 6px;
+  }
+  
+  .volumeSlider {
+    width: 80px;
+    height: 3px;
+  }
+  
+  .volumeSlider::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .volumeSlider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .volumeControlInline {
+    height: 22px;
+    padding: 0 4px;
+  }
+  
+  .volumeControlInline .muteButton {
+    width: 20px;
+    height: 20px;
+    padding: 3px;
+  }
+  
+  .volumeControlInline .sliderContainer.show {
+    width: 80px;
+    padding-left: 2px;
+    margin-right: 4px;
+  }
+  
+  .volumeControlInline .volumeSlider {
+    width: 80px;
+  }
 }

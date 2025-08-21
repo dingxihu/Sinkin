@@ -4,9 +4,22 @@ import CountdownTimer from "./CountdownTimer";
 import GlobalVolumeControl from "./GlobalVolumeControl";
 import { useI18n } from "../context/I18nContext";
 import PresetManager from "./PresetManager";
+import { useState, useEffect } from "react";
 
 const Header = () => {
   const { locale, setLocale, messages } = useI18n();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <header
       style={{
@@ -14,13 +27,13 @@ const Header = () => {
         top: 0,
         left: 0,
         right: 0,
-        height: "4rem",
+        height: isMobile ? "3.5rem" : "4rem",
         backgroundColor: "var(--primary)",
         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
         display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
+        gridTemplateColumns: isMobile ? "auto 1fr auto" : "1fr auto 1fr",
         alignItems: "center",
-        padding: "0 1.5rem",
+        padding: isMobile ? "0 1rem" : "0 1.5rem",
         zIndex: 50,
       }}
     >
@@ -33,7 +46,12 @@ const Header = () => {
           justifySelf: "start",
         }}
       >
-        <Image src="/logo.png" alt="Logo" width={40} height={40} />
+        <Image 
+          src="/logo.png" 
+          alt="Logo" 
+          width={isMobile ? 32 : 40} 
+          height={isMobile ? 32 : 40} 
+        />
       </div>
 
       {/* 中间倒计时控制器 */}
@@ -41,64 +59,57 @@ const Header = () => {
         style={{
           display: "flex",
           justifyContent: "center",
-          gridColumn: 2,
+          gridColumn: isMobile ? 2 : 2,
           justifySelf: "center",
         }}
       >
         <CountdownTimer />
       </div>
 
-      {/* 右侧：语言 + 音量 */}
+      {/* 右侧：预设管理 + 音量控制 */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "0.75rem",
-          gridColumn: 3,
+          gap: isMobile ? "0.5rem" : "0.75rem",
+          gridColumn: isMobile ? 3 : 3,
           justifySelf: "end",
+          minWidth: 0, // 允许容器收缩
+          flexWrap: "nowrap", // 防止换行
         }}
       >
-        <PresetManager />
+        {!isMobile && (
+          <div style={{ flexShrink: 0 }}>
+            <PresetManager />
+          </div>
+        )}
         <div
           style={{
             display: "inline-flex",
             gap: "0.5rem",
             alignItems: "center",
-            height: "28px",
+            height: isMobile ? "24px" : "28px",
             padding: "0 6px",
+            flexShrink: 0, // 防止音量控制被压缩
           }}
         >
-          {/* <select
-            aria-label="language"
-            value={locale}
-            onChange={(e) => setLocale(e.target.value)}
-            style={{
-              height: "28px",
-              width: "50px",
-              borderRadius: "6px",
-              border: "1px solid rgba(255,255,255,0.2)",
-              backgroundColor: "transparent",
-              color: "white",
-              padding: "0 6px",
-              outline: "none",
-            }}
-          >
-            {Object.keys(messages).map((code) => (
-              <option key={code} value={code} style={{ color: "black" }}>
-                {code}
-              </option>
-            ))}
-          </select>
-          <div
-            style={{
-              width: "1px",
-              height: "16px",
-              background: "rgba(255,255,255,0.2)",
-            }}
-          /> */}
           <GlobalVolumeControl variant="inline" />
         </div>
       </div>
+
+      {/* 移动端预设管理器 - 浮动按钮 */}
+      {isMobile && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "1rem",
+            right: "1rem",
+            zIndex: 1000,
+          }}
+        >
+          <PresetManager variant="mobile" />
+        </div>
+      )}
     </header>
   );
 };

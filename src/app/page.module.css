@@ -41,14 +41,83 @@
   gap: 1rem;
   padding: 1rem 1.25rem 1.25rem 1.25rem;
 }
+
+/* 平板端优化 */
 @media (max-width: 768px) {
+  .page {
+    padding: 3.5rem 1rem 1rem 1rem;
+  }
+  
   .main {
     padding: 0.5rem;
   }
-  .audioGrid {
-    padding: 0.5rem;
+  
+  .section {
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
   }
-  .audioItem {
-    padding: 0.5rem;
+  
+  .sectionHeader {
+    padding: 0.75rem 1rem 0.5rem 1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1.1rem;
+  }
+  
+  .sectionSubtitle {
+    font-size: 0.85rem;
+  }
+  
+  .audioGrid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 1rem 1rem;
+  }
+}
+
+/* 手机端优化 */
+@media (max-width: 480px) {
+  .page {
+    padding: 3.5rem 0.5rem 0.5rem 0.5rem;
+  }
+  
+  .main {
+    padding: 0.25rem;
+  }
+  
+  .section {
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+  
+  .sectionHeader {
+    padding: 0.5rem 0.75rem 0.25rem 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1rem;
+  }
+  
+  .sectionSubtitle {
+    font-size: 0.8rem;
+  }
+  
+  .audioGrid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 0.75rem 0.75rem;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 360px) {
+  .audioGrid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.4rem;
+    padding: 0.4rem 0.5rem 0.5rem 0.5rem;
   }
 }
