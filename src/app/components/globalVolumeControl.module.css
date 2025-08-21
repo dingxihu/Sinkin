@@ -1,0 +1,121 @@
+.volumeControl {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: var(--secondary);
+  border-radius: 50%;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.volumeControl:hover {
+  border-radius: 2rem;
+  width: 166px;
+}
+
+.muteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  padding: 11px;
+  position: relative;
+}
+
+.sliderContainer {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 10px;
+}
+
+.sliderContainer.show {
+  width: 100px;
+}
+
+.volumeSlider {
+  width: 100px;
+  height: 4px;
+  -webkit-appearance: none;
+  border-radius: 2px;
+  cursor: pointer;
+  margin: 0;
+  position: relative;
+  background: linear-gradient(
+    to right,
+    var(--slider-active) var(--volume-percentage, 50%),
+    var(--slider-bg) var(--volume-percentage, 50%)
+  );
+  flex-shrink: 0;
+}
+
+.volumeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--slider-active);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.volumeSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Inline variant for header toolbar */
+.volumeControlInline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  height: 26px;
+  padding: 0 6px;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.volumeControlInline:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.volumeControlInline .muteButton {
+  width: 24px;
+  height: 24px;
+  padding: 5px;
+}
+
+.volumeControlInline .sliderContainer {
+  width: 100px;
+  padding-left: 4px;
+}
+
+.volumeControlInline .sliderContainer.show {
+  width: 120px;
+}
+
+.volumeControlInline .volumeSlider {
+  width: 120px;
+}
