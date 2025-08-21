@@ -75,6 +75,8 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
       if (audioPreloader.isPreloaded(src)) {
         audio = audioPreloader.getCachedAudio(src);
         console.log("使用预加载的音频:", title);
+        // 即使使用预加载的音频，也要短暂显示loading状态
+        await new Promise(resolve => setTimeout(resolve, 100));
       } else {
         // 创建新的audio元素
         audio = new Audio();
@@ -82,6 +84,25 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
         audio.preload = "auto"; // 移动端使用自动预加载
         audio.src = src;
         console.log("创建新的音频元素:", title);
+        
+        // 等待音频加载完成
+        if (audio.readyState < 2) {
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('音频加载超时'));
+            }, 5000);
+            
+            audio.addEventListener('canplay', () => {
+              clearTimeout(timeout);
+              resolve();
+            }, { once: true });
+            
+            audio.addEventListener('error', (e) => {
+              clearTimeout(timeout);
+              reject(e);
+            }, { once: true });
+          });
+        }
       }
       
       audio.loop = true;
@@ -114,6 +135,7 @@ const AudioItemComponent = ({ title, src, icon, showTitle = false, group = "audi
           .catch((error) => {
             console.error("音频播放失败:", error, "URL:", src);
             setIsPlaying(false);
+            setIsLoading(false); // 确保loading状态重置
             
             // 移动端特殊处理
             if (audioPreloader.isMobile && error.name === 'NotAllowedError') {
