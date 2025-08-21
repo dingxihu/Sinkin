@@ -46,9 +46,11 @@ export function getAudioFiles() {
 
     const icon = iconFile ? `/icons/${iconFile}` : "/icons/pure-music.png";
 
+    const encoded = encodeURIComponent(file);
     return {
       title: baseName,
-      src: `${overrideBaseUrl}${file}`,
+      // 走本地代理，避免跨域并支持 Range
+      src: `/api/audio/${encoded}`,
       icon: icon,
     };
   });
@@ -68,9 +70,11 @@ export function getAudioFiles() {
 
     const icon = index <= 9 ? `/icons/music${index}.png` : `/icons/music.png`;
 
+    const encoded = encodeURIComponent(file);
     return {
       title: baseName,
-      src: `${overrideBaseUrl}${file}`,
+      // 走本地代理，避免跨域并支持 Range
+      src: `/api/audio/${encoded}`,
       icon: icon,
     };
   });
