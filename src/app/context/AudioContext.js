@@ -36,6 +36,8 @@ export function AudioProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
   const audioRef = useRef(null);
+  // 用于存储各个音频项的控制器
+  const playersRef = useRef(new Map());
 
   // 初始化音频设置
   useEffect(() => {
@@ -122,6 +124,78 @@ export function AudioProvider({ children }) {
     forceUpdate({});
   }, [isAlarmPlaying, forceUpdate]);
 
+  // 注册/反注册播放器
+  const registerPlayer = (id, controller) => {
+    try {
+      playersRef.current.set(id, controller);
+    } catch (e) {
+      console.error("注册播放器失败", e);
+    }
+    return () => unregisterPlayer(id);
+  };
+
+  const unregisterPlayer = (id) => {
+    try {
+      playersRef.current.delete(id);
+    } catch (e) {
+      console.error("反注册播放器失败", e);
+    }
+  };
+
+  // 获取当前组合（用于保存）
+  const getCurrentCombination = () => {
+    const items = [];
+    playersRef.current.forEach((controller, id) => {
+      try {
+        const state = controller.getState ? controller.getState() : {};
+        if (state && (state.isPlaying || (typeof state.volume === "number" && state.volume > 0))) {
+          items.push({
+            id,
+            title: controller.meta?.title || id,
+            group: controller.meta?.group || "audio",
+            volume: typeof state.volume === "number" ? state.volume : 1,
+            isPlaying: !!state.isPlaying,
+          });
+        }
+      } catch (e) {
+        // 忽略单个失败项
+      }
+    });
+    return items;
+  };
+
+  // 应用组合（用于读取）
+  const applyCombination = (items = [], options = { stopOthers: true }) => {
+    try {
+      const idToItem = new Map(items.map((i) => [i.id, i]));
+      if (options?.stopOthers) {
+        playersRef.current.forEach((controller, id) => {
+          if (!idToItem.has(id)) {
+            try { controller.pause && controller.pause(); } catch {}
+          }
+        });
+      }
+      items.forEach((item) => {
+        const controller = playersRef.current.get(item.id);
+        if (!controller) return;
+        try {
+          if (typeof item.volume === "number") {
+            controller.setVolume && controller.setVolume(item.volume);
+          }
+          if (item.isPlaying) {
+            controller.play && controller.play();
+          } else {
+            controller.pause && controller.pause();
+          }
+        } catch (e) {
+          // 忽略单个失败项
+        }
+      });
+    } catch (e) {
+      console.error("应用组合失败", e);
+    }
+  };
+
   const contextValue = {
     globalVolume,
     isGlobalMuted,
@@ -135,6 +209,11 @@ export function AudioProvider({ children }) {
       setGlobalVolume(safeVolume);
     },
     calculateSafeVolume,
+    // 组合/注册相关
+    registerPlayer,
+    unregisterPlayer,
+    getCurrentCombination,
+    applyCombination,
   };
 
   return (

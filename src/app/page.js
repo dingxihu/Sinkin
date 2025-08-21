@@ -20,6 +20,7 @@ export default function Home() {
                 title={audio.title}
                 src={audio.src}
                 icon={audio.icon}
+                group="audio"
               />
             ))}
           </div>
@@ -37,6 +38,7 @@ export default function Home() {
                 title={audio.title}
                 src={audio.src}
                 icon={audio.icon}
+                group="music"
                 showTitle
               />
             ))}

@@ -3,6 +3,7 @@ import Image from "next/image";
 import CountdownTimer from "./CountdownTimer";
 import GlobalVolumeControl from "./GlobalVolumeControl";
 import { useI18n } from "../context/I18nContext";
+import PresetManager from "./PresetManager";
 
 const Header = () => {
   const { locale, setLocale, messages } = useI18n();
@@ -57,6 +58,7 @@ const Header = () => {
           justifySelf: "end",
         }}
       >
+        <PresetManager />
         <div
           style={{
             display: "inline-flex",

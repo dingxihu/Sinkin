@@ -5,11 +5,11 @@ import Image from "next/image";
 import styles from "./audioItem.module.css";
 import { useAudio } from "../context/AudioContext";
 
-const AudioItem = ({ title, src, icon, showTitle = false }) => {
+const AudioItem = ({ title, src, icon, showTitle = false, group = "audio" }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
-  const { globalVolume, isGlobalMuted, isAlarmPlaying } = useAudio();
+  const { globalVolume, isGlobalMuted, isAlarmPlaying, registerPlayer, unregisterPlayer } = useAudio();
 
   /**
    * @description 监听闹钟状态变化，当闹钟开始播放时停止当前音频
@@ -54,6 +54,39 @@ const AudioItem = ({ title, src, icon, showTitle = false }) => {
     }
     e.target.style.setProperty("--volume-percentage", `${newVolume * 100}%`);
   };
+
+  // 注册到全局上下文，暴露控制器
+  useEffect(() => {
+    const id = `${group}:${title}`;
+    const controller = {
+      meta: { title, group },
+      play: () => {
+        if (!isAlarmPlaying) {
+          audioRef.current?.play();
+          setIsPlaying(true);
+        }
+      },
+      pause: () => {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+      },
+      setVolume: (v) => {
+        const newV = Math.max(0, Math.min(1, Number(v) || 0));
+        setVolume(newV);
+        if (audioRef.current) {
+          audioRef.current.volume = isGlobalMuted ? 0 : newV * globalVolume;
+        }
+      },
+      getState: () => ({ isPlaying, volume }),
+    };
+    const dispose = registerPlayer(id, controller);
+    return () => {
+      dispose && dispose();
+      unregisterPlayer(id);
+    };
+    // 仅在首尾及依赖变化时注册/更新
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, group, globalVolume, isGlobalMuted, isAlarmPlaying, registerPlayer, unregisterPlayer, isPlaying]);
 
   return (
     <div className={styles.audioItem}>
