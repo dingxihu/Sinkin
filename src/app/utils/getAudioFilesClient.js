@@ -2,7 +2,8 @@
 export function getAudioFilesClient() {
   // 从 public/config.json 获取配置
   const defaultConfig = {
-    audioBaseUrl: "http://smartmedicalstatic.oss-cn-beijing.aliyuncs.com/_/assets/audio/",
+    audioBaseUrl:
+      "http://smartmedicalstatic.oss-cn-beijing.aliyuncs.com/_/assets/audio/",
     audioFiles: [
       "brownnoise.ogg",
       "coffee.ogg",
@@ -19,9 +20,10 @@ export function getAudioFilesClient() {
       "water.ogg",
       "waterstream.ogg",
       "whitenoise.ogg",
-      "wind.ogg"
+      "wind.ogg",
     ],
     musicFiles: [
+      "梦中蝶影西游记后传.mp3",
       "呕心沥血.ogg",
       "Autumn.mp3",
       "江上清风游.mp3",
@@ -75,22 +77,22 @@ export function getAudioFilesClient() {
       "许愿.mp3",
       "逍遥游.mp3",
       "郁.mp3",
-      "赵子龙.mp3"
-    ]
+      "赵子龙.mp3",
+    ],
   };
 
   let config = defaultConfig;
-  
+
   // 尝试从 localStorage 获取用户自定义配置
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     try {
-      const savedConfig = localStorage.getItem('sinkin.audioConfig');
+      const savedConfig = localStorage.getItem("sinkin.audioConfig");
       if (savedConfig) {
         const parsed = JSON.parse(savedConfig);
         config = { ...defaultConfig, ...parsed };
       }
     } catch (e) {
-      console.warn('读取本地配置失败，使用默认配置');
+      console.warn("读取本地配置失败，使用默认配置");
     }
   }
 
@@ -101,7 +103,7 @@ export function getAudioFilesClient() {
   const audioData = audioList.map((file) => {
     const baseName = file.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
     const encoded = encodeURIComponent(file);
-    
+
     return {
       title: baseName,
       src: `/api/audio/${encoded}`,
@@ -112,7 +114,7 @@ export function getAudioFilesClient() {
   const musicData = musicList.map((file, index) => {
     const baseName = file.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
     const encoded = encodeURIComponent(file);
-    
+
     return {
       title: baseName,
       src: `/api/audio/${encoded}`,
